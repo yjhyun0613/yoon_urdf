@@ -1,0 +1,24 @@
+[0.840s] Invoking command in '/home/yoon/yoon_urdf/src/yoon_urdf': PYTHONPATH=/home/yoon/yoon_urdf/build/yoon_urdf/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/yoon/yoon_urdf/install/yoon_urdf/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/yoon_urdf build --build-base /home/yoon/yoon_urdf/build/yoon_urdf/build install --record /home/yoon/yoon_urdf/build/yoon_urdf/install.log --single-version-externally-managed install_data
+[0.966s] /home/yoon/.local/lib/python3.10/site-packages/setuptools/_distutils/dist.py:287: UserWarning: Unknown distribution option: 'tests_require'
+[0.966s]   warnings.warn(msg)
+[1.080s] running egg_info
+[1.097s] writing ../../build/yoon_urdf/yoon_urdf.egg-info/PKG-INFO
+[1.098s] writing dependency_links to ../../build/yoon_urdf/yoon_urdf.egg-info/dependency_links.txt
+[1.098s] writing requirements to ../../build/yoon_urdf/yoon_urdf.egg-info/requires.txt
+[1.099s] writing top-level names to ../../build/yoon_urdf/yoon_urdf.egg-info/top_level.txt
+[1.137s] reading manifest file '../../build/yoon_urdf/yoon_urdf.egg-info/SOURCES.txt'
+[1.138s] writing manifest file '../../build/yoon_urdf/yoon_urdf.egg-info/SOURCES.txt'
+[1.138s] running build
+[1.139s] running build_py
+[1.139s] copying yoon_urdf/__init__.py -> /home/yoon/yoon_urdf/build/yoon_urdf/build/lib/yoon_urdf
+[1.139s] running install
+[1.141s] running install_lib
+[1.161s] running install_data
+[1.162s] copying resource/yoon_urdf -> /home/yoon/yoon_urdf/install/yoon_urdf/share/ament_index/resource_index/packages
+[1.162s] copying package.xml -> /home/yoon/yoon_urdf/install/yoon_urdf/share/yoon_urdf
+[1.162s] running install_egg_info
+[1.183s] removing '/home/yoon/yoon_urdf/install/yoon_urdf/lib/python3.10/site-packages/yoon_urdf-0.0.0-py3.10.egg-info' (and everything under it)
+[1.185s] Copying ../../build/yoon_urdf/yoon_urdf.egg-info to /home/yoon/yoon_urdf/install/yoon_urdf/lib/python3.10/site-packages/yoon_urdf-0.0.0-py3.10.egg-info
+[1.185s] running install_scripts
+[1.224s] writing list of installed files to '/home/yoon/yoon_urdf/build/yoon_urdf/install.log'
+[1.240s] Invoked command in '/home/yoon/yoon_urdf/src/yoon_urdf' returned '0': PYTHONPATH=/home/yoon/yoon_urdf/build/yoon_urdf/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/yoon/yoon_urdf/install/yoon_urdf/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/yoon_urdf build --build-base /home/yoon/yoon_urdf/build/yoon_urdf/build install --record /home/yoon/yoon_urdf/build/yoon_urdf/install.log --single-version-externally-managed install_data
