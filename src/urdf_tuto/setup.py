@@ -17,6 +17,7 @@ setup(
         (os.path.join('share', package_name, 'world'), glob('world/*.world')),
         (os.path.join('share', package_name, 'config'), glob('config/*')),
         (os.path.join('share', package_name, 'yolo'), glob('yolo/*.pt')),
+        (os.path.join('share', package_name, 'fire_detect'), glob('fire_detect/*.py')),
         (os.path.join('share', package_name, 'maps'), glob('maps/*'))
     ],
     install_requires=['setuptools'],
@@ -28,7 +29,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'yolo_detector = yolo.yolo_detector:main'
+            'yolo_detector = yolo.yolo_detector:main',
+            'fire_detector = fire_detect.fire_detector_01:main',
         ],
     },
 )

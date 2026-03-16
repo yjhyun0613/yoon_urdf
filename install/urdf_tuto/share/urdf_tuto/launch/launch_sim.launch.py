@@ -42,6 +42,13 @@ def generate_launch_description():
             arguments=['-d', os.path.join(get_package_share_directory('urdf_tuto'), 'config', 'robot2.rviz')]
         )
     
+    # fire_detector_node = Node(
+    #     package=package_name,
+    #     executable='fire_detector', # setup.py에 등록한 이름
+    #     output='screen',
+    #     parameters=[{'use_sim_time': True}] # 가제보 시간과 동기화
+    # )
+    
     yolo_node = Node(
     package=package_name,
     executable='yolo_detector',
@@ -65,6 +72,7 @@ def generate_launch_description():
             gazebo,
             spawn_entity,
             rviz2,
+            # fire_detector_node
             yolo_node,
             yolo_image_view
         ]

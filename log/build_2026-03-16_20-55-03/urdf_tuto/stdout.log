@@ -1,0 +1,24 @@
+running egg_info
+writing ../../build/urdf_tuto/urdf_tuto.egg-info/PKG-INFO
+writing dependency_links to ../../build/urdf_tuto/urdf_tuto.egg-info/dependency_links.txt
+writing entry points to ../../build/urdf_tuto/urdf_tuto.egg-info/entry_points.txt
+writing requirements to ../../build/urdf_tuto/urdf_tuto.egg-info/requires.txt
+writing top-level names to ../../build/urdf_tuto/urdf_tuto.egg-info/top_level.txt
+reading manifest file '../../build/urdf_tuto/urdf_tuto.egg-info/SOURCES.txt'
+writing manifest file '../../build/urdf_tuto/urdf_tuto.egg-info/SOURCES.txt'
+running build
+running build_py
+copying fire_detect/fire_detector_01.py -> /home/yoon/yoon_urdf/build/urdf_tuto/build/lib/fire_detect
+running install
+running install_lib
+copying /home/yoon/yoon_urdf/build/urdf_tuto/build/lib/fire_detect/fire_detector_01.py -> /home/yoon/yoon_urdf/install/urdf_tuto/lib/python3.10/site-packages/fire_detect
+byte-compiling /home/yoon/yoon_urdf/install/urdf_tuto/lib/python3.10/site-packages/fire_detect/fire_detector_01.py to fire_detector_01.cpython-310.pyc
+running install_data
+copying fire_detect/fire_detector_01.py -> /home/yoon/yoon_urdf/install/urdf_tuto/share/urdf_tuto/fire_detect
+running install_egg_info
+removing '/home/yoon/yoon_urdf/install/urdf_tuto/lib/python3.10/site-packages/urdf_tuto-0.0.0-py3.10.egg-info' (and everything under it)
+Copying ../../build/urdf_tuto/urdf_tuto.egg-info to /home/yoon/yoon_urdf/install/urdf_tuto/lib/python3.10/site-packages/urdf_tuto-0.0.0-py3.10.egg-info
+running install_scripts
+Installing fire_detector script to /home/yoon/yoon_urdf/install/urdf_tuto/lib/urdf_tuto
+Installing yolo_detector script to /home/yoon/yoon_urdf/install/urdf_tuto/lib/urdf_tuto
+writing list of installed files to '/home/yoon/yoon_urdf/build/urdf_tuto/install.log'
