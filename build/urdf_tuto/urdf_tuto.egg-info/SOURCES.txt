@@ -11,11 +11,14 @@ setup.py
 config/cartographer.lua
 config/robot1.rviz
 config/robot2.rviz
+drone_detector/__init__.py
+drone_detector/drone_detector_01.py
 fire_detect/__init__.py
 fire_detect/fire_detector.py
 fire_detect/fire_detector_01.py
 fire_detect/roboflow_test.py
 launch/cartographer.launch.py
+launch/drone_detect.launch.py
 launch/fire_detect.launch.py
 launch/launch_sim.launch.py
 launch/navigation.launch.py

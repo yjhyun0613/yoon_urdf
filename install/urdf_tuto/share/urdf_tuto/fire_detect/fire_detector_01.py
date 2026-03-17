@@ -21,7 +21,7 @@ class FireDetectorNode(Node):
         # 경로를 'best.pt'로 설정 (파일이 실행 위치에 있어야 함)
         self.model = YOLO('/home/yoon/yoon_urdf/src/urdf_tuto/fire_detect.pt').to('cuda') 
         
-        self.get_logger().info('🔥 RTX 3070 로컬 GPU 가속 모드로 화재 감지를 시작합니다!')
+        self.get_logger().info('화재 감지를 시작합니다!')
 
     def image_callback(self, msg):
         try:

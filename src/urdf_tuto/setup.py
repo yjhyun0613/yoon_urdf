@@ -18,6 +18,7 @@ setup(
         (os.path.join('share', package_name, 'config'), glob('config/*')),
         (os.path.join('share', package_name, 'yolo'), glob('yolo/*.pt')),
         (os.path.join('share', package_name, 'fire_detect'), glob('fire_detect/*.py')),
+        (os.path.join('share', package_name, 'drone_detector'), glob('drone_detector/*.py')),        
         (os.path.join('share', package_name, 'maps'), glob('maps/*'))
     ],
     install_requires=['setuptools'],
@@ -31,6 +32,7 @@ setup(
         'console_scripts': [
             'yolo_detector = yolo.yolo_detector:main',
             'fire_detector = fire_detect.fire_detector_01:main',
+            'drone_detector = drone_detector.drone_detector_01:main',
         ],
     },
 )
