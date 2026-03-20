@@ -13,6 +13,7 @@ config/robot1.rviz
 config/robot2.rviz
 drone_detector/__init__.py
 drone_detector/drone_detector_01.py
+drone_detector/drone_detector_phone.py
 fire_detect/__init__.py
 fire_detect/fire_detector.py
 fire_detect/fire_detector_01.py

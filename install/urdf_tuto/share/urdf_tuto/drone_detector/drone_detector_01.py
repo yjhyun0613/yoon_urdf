@@ -19,7 +19,7 @@ class FireDetectorNode(Node):
 
         # 1. 내 컴퓨터의 GPU(RTX 3070)를 사용하여 모델 로드
         # 경로를 'best.pt'로 설정 (파일이 실행 위치에 있어야 함)
-        self.model = YOLO('/home/yoon/yoon_urdf/src/urdf_tuto/dron_detector.pt').to('cuda') 
+        self.model = YOLO('/home/yoon/yoon_urdf/src/urdf_tuto/drone_detector/drone_detector_01.pt').to('cuda') 
         
         self.get_logger().info('드론 감지를 시작합니다!')
 
