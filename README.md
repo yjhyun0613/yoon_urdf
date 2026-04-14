@@ -7,16 +7,16 @@
 아래 명령어를 순서대로 입력하여 빌드 및 시뮬레이션을 실행합니다.
 
 
-# 1. 워크스페이스 이동
+### 1. 워크스페이스 이동
 cd yoon_urdf
 
-# 2. 패키지 빌드
+### 2. 패키지 빌드
 colcon build
 
-# 3. 환경 설정 적용
+### 3. 환경 설정 적용
 source install/setup.bash
 
-# 4. 기본 시뮬레이션 실행
+### 4. 기본 시뮬레이션 실행
 ros2 launch urdf_tuto launch_sim.launch.py
 
 | 런치 파일 명 | 주요 기능 | 포함 사항 |
