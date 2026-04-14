@@ -19,7 +19,8 @@ source install/setup.bash
 # 4. 기본 시뮬레이션 실행
 ros2 launch urdf_tuto launch_sim.launch.py
 
-런치 파일 명,주요 기능,포함 사항
-launch_sim.launch.py,기본 시뮬레이션 실행,"TeleopKey, 카메라, 라이다(Lidar)"
-fire_detect.launch.py,불 감지 시뮬레이션,불(Fire) 감지 YOLO 모델 적용
-drone_detect.launch.py,드론 감지 시뮬레이션,드론(Drone) 감지 YOLO 모델 적용
+| 런치 파일 명 | 주요 기능 | 포함 사항 |
+| :--- | :--- | :--- |
+| launch_sim.launch.py | 기본 시뮬레이션 실행 | TeleopKey, 카메라, 라이다(Lidar) |
+| fire_detect.launch.py | 불 감지 시뮬레이션 | 불(Fire) 감지 YOLO 모델 적용 |
+| drone_detect.launch.py | 드론 감지 시뮬레이션 | 드론(Drone) 감지 YOLO 모델 적용 |
