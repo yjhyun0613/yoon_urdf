@@ -1,3 +1,6 @@
 /frames_2026-03-14_16.54.48.gv
 /frames_2026-03-14_16.54.48.pdf
 .vscode/
+build/
+log/
+install/
