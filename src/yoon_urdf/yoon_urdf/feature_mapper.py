@@ -28,6 +28,8 @@ class FeatureMapper(Node):
         self.declare_parameter('parallax_threshold', 0.044)
         self.declare_parameter('margin_ratio', 0.15)
         self.declare_parameter('algorithm_mode', 'advanced_filter') # basic, advanced_filter, sliding_window
+        self.declare_parameter('max_depth_uncertainty', 0.15)
+        self.declare_parameter('max_relative_uncertainty', 0.05)
         
         self.camera_offset_x = self.get_parameter('camera_offset_x').value
         self.camera_height = self.get_parameter('camera_height').value
@@ -41,6 +43,8 @@ class FeatureMapper(Node):
         self.parallax_threshold = self.get_parameter('parallax_threshold').value
         self.margin_ratio = self.get_parameter('margin_ratio').value
         self.algorithm_mode = self.get_parameter('algorithm_mode').value
+        self.max_depth_uncertainty = self.get_parameter('max_depth_uncertainty').value
+        self.max_relative_uncertainty = self.get_parameter('max_relative_uncertainty').value
         
         # Sliding Window Queue (max size 3)
         self.sliding_window = []
@@ -268,6 +272,51 @@ class FeatureMapper(Node):
         cv2.imshow("AMR Feature Tracker Stream", cv_image)
         cv2.waitKey(1)
 
+    def refine_triangulation(self, P_matrices, u_points, X_initial):
+        """
+        Refines the 3D point coordinates by minimizing geometric reprojection error
+        using Gauss-Newton optimization.
+        P_matrices: list of 3x4 projection matrices
+        u_points: list of 2D matched pixel points [[u1, v1], [u2, v2], ...]
+        X_initial: initial 3D point coordinates [x, y, z]
+        """
+        X = np.array(X_initial, dtype=np.float64).copy()
+        
+        for _ in range(5):
+            J_list = []
+            r_list = []
+            
+            for P, u in zip(P_matrices, u_points):
+                X_h = np.append(X, 1.0)
+                proj = P.dot(X_h)
+                w = proj[2]
+                if abs(w) < 1e-5:
+                    return X_initial
+                
+                u_proj = proj[0] / w
+                v_proj = proj[1] / w
+                
+                r_list.append(u_proj - u[0])
+                r_list.append(v_proj - u[1])
+                
+                j_row1 = (P[0, :3] - u_proj * P[2, :3]) / w
+                j_row2 = (P[1, :3] - v_proj * P[2, :3]) / w
+                J_list.append(j_row1)
+                J_list.append(j_row2)
+                
+            r = np.array(r_list)
+            J = np.vstack(J_list)
+            
+            try:
+                delta_X, _, _, _ = np.linalg.lstsq(J.T.dot(J), -J.T.dot(r), rcond=None)
+                X += delta_X
+                if np.linalg.norm(delta_X) < 1e-4:
+                    break
+            except np.linalg.LinAlgError:
+                return X_initial
+                
+        return X
+
     def run_basic_triangulation(self, cv_image, gray, kp, des, P_curr, cx_w, cy_w, header):
         bf_basic = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
         valid_triangulated_points = []
@@ -357,53 +406,68 @@ class FeatureMapper(Node):
                 C1 = np.array([self.prev_cam_x, self.prev_cam_y, self.camera_height])
                 C2 = np.array([cx_w, cy_w, self.camera_height])
                 
-                for i, p in enumerate(points_3d):
+                for i, p_init in enumerate(points_3d):
+                    # 1. Refine coordinates using Gauss-Newton reprojection minimization
+                    p = self.refine_triangulation([self.prev_P, P_curr], [pts1_2d[i], pts2_2d[i]], p_init)
+                    
                     dist_to_robot = math.sqrt((p[0] - self.robot_x)**2 + (p[1] - self.robot_y)**2)
                     if 0.5 < dist_to_robot < 6.0 and -0.01 <= p[2] <= 1.8:
-                        if np.isfinite(p).all():
-                            # Reprojection error filter
-                            p_homo = np.array([p[0], p[1], p[2], 1.0])
-                            
-                            pt1_proj_h = self.prev_P.dot(p_homo)
-                            if abs(pt1_proj_h[2]) > 1e-5:
-                                u1_proj = pt1_proj_h[0] / pt1_proj_h[2]
-                                v1_proj = pt1_proj_h[1] / pt1_proj_h[2]
-                                err1 = math.hypot(u1_proj - pts1_2d[i][0], v1_proj - pts1_2d[i][1])
-                            else:
-                                err1 = 999.0
-                                
-                            pt2_proj_h = P_curr.dot(p_homo)
-                            if abs(pt2_proj_h[2]) > 1e-5:
-                                u2_proj = pt2_proj_h[0] / pt2_proj_h[2]
-                                v2_proj = pt2_proj_h[1] / pt2_proj_h[2]
-                                err2 = math.hypot(u2_proj - pts2_2d[i][0], v2_proj - pts2_2d[i][1])
-                            else:
-                                err2 = 999.0
-                                
-                            if err1 > 3.0 or err2 > 3.0:
-                                continue
-                                
-                            # Parallax filter
-                            v1 = p - C1
-                            v2 = p - C2
-                            norm_v1 = np.linalg.norm(v1)
-                            norm_v2 = np.linalg.norm(v2)
-                            if norm_v1 > 1e-5 and norm_v2 > 1e-5:
-                                cos_theta = np.dot(v1, v2) / (norm_v1 * norm_v2)
-                                cos_theta = np.clip(cos_theta, -1.0, 1.0)
-                                parallax_angle = math.acos(cos_theta)
-                                if parallax_angle < self.parallax_threshold:
-                                    continue
-                                    
-                            ix = int(p[0] / self.voxel_size)
-                            iy = int(p[1] / self.voxel_size)
-                            iz = int(p[2] / self.voxel_size)
-                            voxel_coord = (ix, iy, iz)
-                            
-                            if voxel_coord not in self.mapped_voxels:
-                                self.mapped_voxels.add(voxel_coord)
-                                self.accumulated_points.append(p)
-                                valid_triangulated_points.append(p)
+                         if np.isfinite(p).all():
+                             # Reprojection error filter using refined point
+                             p_homo = np.array([p[0], p[1], p[2], 1.0])
+                             
+                             pt1_proj_h = self.prev_P.dot(p_homo)
+                             if abs(pt1_proj_h[2]) > 1e-5:
+                                 u1_proj = pt1_proj_h[0] / pt1_proj_h[2]
+                                 v1_proj = pt1_proj_h[1] / pt1_proj_h[2]
+                                 err1 = math.hypot(u1_proj - pts1_2d[i][0], v1_proj - pts1_2d[i][1])
+                             else:
+                                 err1 = 999.0
+                                 
+                             pt2_proj_h = P_curr.dot(p_homo)
+                             if abs(pt2_proj_h[2]) > 1e-5:
+                                 u2_proj = pt2_proj_h[0] / pt2_proj_h[2]
+                                 v2_proj = pt2_proj_h[1] / pt2_proj_h[2]
+                                 err2 = math.hypot(u2_proj - pts2_2d[i][0], v2_proj - pts2_2d[i][1])
+                             else:
+                                 err2 = 999.0
+                                 
+                             if err1 > 3.0 or err2 > 3.0:
+                                 continue
+                                 
+                             # Parallax & Depth Uncertainty Filter
+                             v1 = p - C1
+                             v2 = p - C2
+                             norm_v1 = np.linalg.norm(v1)
+                             norm_v2 = np.linalg.norm(v2)
+                             if norm_v1 > 1e-5 and norm_v2 > 1e-5:
+                                 cos_theta = np.dot(v1, v2) / (norm_v1 * norm_v2)
+                                 cos_theta = np.clip(cos_theta, -1.0, 1.0)
+                                 parallax_angle = math.acos(cos_theta)
+                                 if parallax_angle < self.parallax_threshold:
+                                     continue
+                                     
+                                 # Calculate depth uncertainty (in meters)
+                                 sin_theta = math.sin(parallax_angle)
+                                 d = (norm_v1 + norm_v2) / 2.0
+                                 fx_val = self.fx if (self.fx is not None and self.fx > 0) else 240.0
+                                 if sin_theta > 1e-5:
+                                     sigma_depth = (d / sin_theta) * (1.5 / fx_val)
+                                 else:
+                                     sigma_depth = 999.0
+                                     
+                                 if sigma_depth > self.max_depth_uncertainty or (sigma_depth / d) > self.max_relative_uncertainty:
+                                     continue
+                                     
+                             ix = int(p[0] / self.voxel_size)
+                             iy = int(p[1] / self.voxel_size)
+                             iz = int(p[2] / self.voxel_size)
+                             voxel_coord = (ix, iy, iz)
+                             
+                             if voxel_coord not in self.mapped_voxels:
+                                 self.mapped_voxels.add(voxel_coord)
+                                 self.accumulated_points.append(p)
+                                 valid_triangulated_points.append(p)
                                 
                 for pt in pts2_2d:
                     cv2.circle(cv_image, (int(pt[0]), int(pt[1])), 4, (0, 255, 0), -1)
@@ -559,7 +623,10 @@ class FeatureMapper(Node):
             X = Vh[-1]
             
             if abs(X[3]) > 1e-5:
-                p = X[:3] / X[3]
+                p_init = X[:3] / X[3]
+                
+                # 1. Refine coordinates using Gauss-Newton minimization on all 3 views
+                p = self.refine_triangulation([P1, P2, P3], [pt1, pt2, pt3], p_init)
                 
                 # Check bounds
                 dist_to_robot = math.sqrt((p[0] - self.robot_x)**2 + (p[1] - self.robot_y)**2)
@@ -581,18 +648,34 @@ class FeatureMapper(Node):
                             reproj_rejected += 1
                             continue
                             
-                        # Parallax filter between oldest and newest view
+                        # Parallax & Depth Uncertainty Filter
                         C1 = np.array([kf1['x'], kf1['y'], self.camera_height])
+                        C2 = np.array([kf2['x'], kf2['y'], self.camera_height])
                         C3 = np.array([cx_w, cy_w, self.camera_height])
                         v1 = p - C1
+                        v2 = p - C2
                         v3 = p - C3
                         norm_v1 = np.linalg.norm(v1)
+                        norm_v2 = np.linalg.norm(v2)
                         norm_v3 = np.linalg.norm(v3)
                         if norm_v1 > 1e-5 and norm_v3 > 1e-5:
                             cos_theta = np.dot(v1, v3) / (norm_v1 * norm_v3)
                             cos_theta = np.clip(cos_theta, -1.0, 1.0)
                             parallax_angle = math.acos(cos_theta)
                             if parallax_angle < self.parallax_threshold:
+                                parallax_rejected += 1
+                                continue
+                                
+                            # Calculate depth uncertainty (in meters)
+                            sin_theta = math.sin(parallax_angle)
+                            d = (norm_v1 + norm_v2 + norm_v3) / 3.0
+                            fx_val = self.fx if (self.fx is not None and self.fx > 0) else 240.0
+                            if sin_theta > 1e-5:
+                                sigma_depth = (d / sin_theta) * (1.5 / fx_val)
+                            else:
+                                sigma_depth = 999.0
+                                
+                            if sigma_depth > self.max_depth_uncertainty or (sigma_depth / d) > self.max_relative_uncertainty:
                                 parallax_rejected += 1
                                 continue
                                 
