@@ -36,9 +36,10 @@ def run_experiment(name, params):
     print(f"==================================================")
     
     # 1. Start simulator (mujoco_cam_publisher)
-    print("Launching mujoco_cam_publisher...")
+    fovy_val = params.get('fovy', 90.0)
+    print(f"Launching mujoco_cam_publisher with fovy: {fovy_val}...")
     sim_proc = subprocess.Popen(
-        ['ros2', 'run', 'yoon_urdf', 'mujoco_cam_publisher'],
+        ['ros2', 'run', 'yoon_urdf', 'mujoco_cam_publisher', '--ros-args', '-p', f'fovy:={fovy_val}'],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         preexec_fn=os.setsid
@@ -47,10 +48,11 @@ def run_experiment(name, params):
     # Wait for simulator to warm up
     time.sleep(3.0)
     
-    # 2. Build feature_mapper arguments
+    # 2. Build feature_mapper arguments (exclude fovy from mapper node params)
     args = ['ros2', 'run', 'yoon_urdf', 'feature_mapper', '--ros-args']
     for k, v in params.items():
-        args.extend(['-p', f"{k}:={v}"])
+        if k != 'fovy':
+            args.extend(['-p', f"{k}:={v}"])
         
     print(f"Launching feature_mapper with params: {args}")
     mapper_proc = subprocess.Popen(
@@ -203,6 +205,54 @@ def main():
             "min_rotation": 0.20,
             "voxel_size": 0.08,
             "match_threshold": 55,
+            "parallax_threshold": 0.044,
+            "margin_ratio": 0.15
+        },
+        "FOV_60": {
+            "algorithm_mode": "sliding_window",
+            "fovy": 60.0,
+            "nfeatures": 3000,
+            "fast_threshold": 7,
+            "min_baseline": 0.12,
+            "min_rotation": 0.20,
+            "voxel_size": 0.05,
+            "match_threshold": 60,
+            "parallax_threshold": 0.044,
+            "margin_ratio": 0.15
+        },
+        "FOV_75": {
+            "algorithm_mode": "sliding_window",
+            "fovy": 75.0,
+            "nfeatures": 3000,
+            "fast_threshold": 7,
+            "min_baseline": 0.12,
+            "min_rotation": 0.20,
+            "voxel_size": 0.05,
+            "match_threshold": 60,
+            "parallax_threshold": 0.044,
+            "margin_ratio": 0.15
+        },
+        "FOV_90": {
+            "algorithm_mode": "sliding_window",
+            "fovy": 90.0,
+            "nfeatures": 3000,
+            "fast_threshold": 7,
+            "min_baseline": 0.12,
+            "min_rotation": 0.20,
+            "voxel_size": 0.05,
+            "match_threshold": 60,
+            "parallax_threshold": 0.044,
+            "margin_ratio": 0.15
+        },
+        "FOV_105": {
+            "algorithm_mode": "sliding_window",
+            "fovy": 105.0,
+            "nfeatures": 3000,
+            "fast_threshold": 7,
+            "min_baseline": 0.12,
+            "min_rotation": 0.20,
+            "voxel_size": 0.05,
+            "match_threshold": 60,
             "parallax_threshold": 0.044,
             "margin_ratio": 0.15
         }
