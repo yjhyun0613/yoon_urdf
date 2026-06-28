@@ -1,0 +1,16 @@
+{
+  "name": "Default",
+  "parameters": {
+    "algorithm_mode": "advanced_filter",
+    "nfeatures": 3000,
+    "fast_threshold": 7,
+    "min_baseline": 0.12,
+    "min_rotation": 0.2,
+    "voxel_size": 0.05,
+    "match_threshold": 60,
+    "parallax_threshold": 0.044,
+    "margin_ratio": 0.15
+  },
+  "points": [],
+  "grid": null
+}

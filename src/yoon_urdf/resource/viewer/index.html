@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Mapping Parameter Analysis Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --accent-color: #3b82f6;
+            --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            --text-color: #f1f5f9;
+            --text-muted: #94a3b8;
+            --panel-width: 320px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header block */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 2rem;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 10;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .header-meta {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        /* Main layout container */
+        .dashboard-container {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 70px);
+            overflow: hidden;
+        }
+
+        /* Left control/metric sidebar */
+        .sidebar {
+            width: var(--panel-width);
+            background: rgba(15, 23, 42, 0.5);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            overflow-y: auto;
+            gap: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-color);
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            backdrop-filter: blur(8px);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+
+        select {
+            width: 100%;
+            background: #1e293b;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        /* Parameters Table */
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .param-table th, .param-table td {
+            text-align: left;
+            padding: 6px 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .param-table th {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .param-table td.val-left {
+            color: #3b82f6;
+            text-align: right;
+        }
+
+        .param-table td.val-right {
+            color: #a855f7;
+            text-align: right;
+        }
+
+        /* 3D and 2D Plot Grid */
+        .plot-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #090d16;
+        }
+
+        .compare-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1.2fr 0.8fr;
+            flex: 1;
+            gap: 1px;
+            background: var(--border-color);
+        }
+
+        .plot-container {
+            background: #090d16;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .plot-header {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            z-index: 5;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .plot-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+        }
+
+        .badge-left {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #60a5fa;
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .badge-right {
+            background: rgba(168, 85, 247, 0.15);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            color: #c084fc;
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .plot-element {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Metric comparison items */
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .metric-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .metric-value.left {
+            color: #60a5fa;
+        }
+
+        .metric-value.right {
+            color: #c084fc;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1 id="app-title">3D Mapping Parameter Analysis</h1>
+            <div class="subtitle">Monocular Triangulation & Costmap Parameter Comparison</div>
+        </div>
+        <div class="header-meta">
+            Active Workspace: yoon_urdf
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <!-- Sidebar Controls & Parameter Compare -->
+        <div class="sidebar">
+            <!-- Selector Card -->
+            <div class="card">
+                <div class="section-title">조합 선택</div>
+                <div class="control-group">
+                    <div>
+                        <label for="select-left">Left Model (Blue)</label>
+                        <select id="select-left" onchange="loadLeftModel(this.value)">
+                            <option value="Default" selected>Default (기본)</option>
+                            <option value="Dense">Dense (밀집형)</option>
+                            <option value="Strict_Filter">Strict Filter (엄격한 필터)</option>
+                            <option value="Lenient_Filter">Lenient Filter (완화된 필터)</option>
+                            <option value="High_Resolution">High Resolution (고해상도)</option>
+                            <option value="Fast_Speed">Fast Speed (경량화 고속)</option>
+                            <option value="FOV_60">FOV 60 (협각)</option>
+                            <option value="FOV_75">FOV 75 (중협각)</option>
+                            <option value="FOV_90">FOV 90 (기본 광각)</option>
+                            <option value="FOV_105">FOV 105 (초광각)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="select-right">Right Model (Purple)</label>
+                        <select id="select-right" onchange="loadRightModel(this.value)">
+                            <option value="Default">Default (기본)</option>
+                            <option value="Dense" selected>Dense (밀집형)</option>
+                            <option value="Strict_Filter">Strict Filter (엄격한 필터)</option>
+                            <option value="Lenient_Filter">Lenient Filter (완화된 필터)</option>
+                            <option value="High_Resolution">High Resolution (고해상도)</option>
+                            <option value="Fast_Speed">Fast Speed (경량화 고속)</option>
+                            <option value="FOV_60">FOV 60 (협각)</option>
+                            <option value="FOV_75">FOV 75 (중협각)</option>
+                            <option value="FOV_90">FOV 90 (기본 광각)</option>
+                            <option value="FOV_105">FOV 105 (초광각)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Card -->
+            <div class="card">
+                <div class="section-title">맵 통계 비교</div>
+                <div class="metric-row">
+                    <span class="metric-label">Left Point Count</span>
+                    <span class="metric-value left" id="left-count">0</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Right Point Count</span>
+                    <span class="metric-value right" id="right-count">0</span>
+                </div>
+            </div>
+
+            <!-- Param Compare Card -->
+            <div class="card" style="flex: 1;">
+                <div class="section-title">파라미터 세부 비교</div>
+                <table class="param-table">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th style="text-align: right; color:#3b82f6;">Left</th>
+                            <th style="text-align: right; color:#a855f7;">Right</th>
+                        </tr>
+                    </thead>
+                    <tbody id="param-comparison-body">
+                        <!-- Dynamic content -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Plot Visualizer Grid -->
+        <div class="plot-area">
+            <div class="compare-grid">
+                <!-- Left 3D Point Cloud -->
+                <div class="plot-container">
+                    <div class="plot-header">
+                        <span class="plot-title" id="left-3d-title">Left 3D Point Cloud</span>
+                        <span class="badge-left" id="left-3d-badge">Default</span>
+                    </div>
+                    <div id="left-3d-plot" class="plot-element"></div>
+                </div>
+
+                <!-- Right 3D Point Cloud -->
+                <div class="plot-container">
+                    <div class="plot-header">
+                        <span class="plot-title" id="right-3d-title">Right 3D Point Cloud</span>
+                        <span class="badge-right" id="right-3d-badge">Dense</span>
+                    </div>
+                    <div id="right-3d-plot" class="plot-element"></div>
+                </div>
+
+                <!-- Left 2D Occupancy Grid -->
+                <div class="plot-container">
+                    <div class="plot-header">
+                        <span class="plot-title" id="left-2d-title">Left 2D Risk Costmap</span>
+                        <span class="badge-left" id="left-2d-badge">Default</span>
+                    </div>
+                    <div id="left-2d-plot" class="plot-element"></div>
+                </div>
+
+                <!-- Right 2D Occupancy Grid -->
+                <div class="plot-container">
+                    <div class="plot-header">
+                        <span class="plot-title" id="right-2d-title">Right 2D Risk Costmap</span>
+                        <span class="badge-right" id="right-2d-badge">Dense</span>
+                    </div>
+                    <div id="right-2d-plot" class="plot-element"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Database to store loaded experiment results
+        const modelData = {
+            left: null,
+            right: null
+        };
+
+        // Pedestrian ground truth coordinates (from MuJoCo simulator geoms)
+        const groundTruthPedestrians = [
+            { x: 1.5, y: 0.5, name: "Target A (Red)", color: "#ef4444" },
+            { x: -1.5, y: -0.5, name: "Target B (Green)", color: "#22c55e" },
+            { x: 0.0, y: 1.2, name: "Target C (Blue)", color: "#3b82f6" }
+        ];
+
+        // Robot trajectory: Circle radius 0.6m centered at (0,0)
+        const trajTheta = Array.from({length: 100}, (_, i) => (i * 2 * Math.PI) / 99);
+        const trajX = trajTheta.map(t => 0.6 * Math.cos(t));
+        const trajY = trajTheta.map(t => 0.6 * Math.sin(t));
+        const trajZ = trajTheta.map(() => 0.1); // robot base link height
+
+        // Parameter labels for beautiful mapping
+        const paramKeys = {
+            "nfeatures": "ORB Features",
+            "fast_threshold": "FAST Threshold",
+            "min_baseline": "Min Baseline (m)",
+            "min_rotation": "Min Rotation (rad)",
+            "voxel_size": "Voxel size (m)",
+            "match_threshold": "Hamming Match Max",
+            "parallax_threshold": "Min Parallax (rad)",
+            "margin_ratio": "Margin Mask Ratio"
+        };
+
+        // Initialize dashboard
+        window.addEventListener('DOMContentLoaded', () => {
+            loadLeftModel('Default');
+            loadRightModel('Dense');
+        });
+
+        // Load experiment data from JSON
+        async function fetchModelJSON(name) {
+            try {
+                const response = await fetch(`./data/${name}.json`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return await response.json();
+            } catch (e) {
+                console.error("Could not fetch data for: ", name, e);
+                // Return dummy fallback structure if fetch fails (for immediate testing offline)
+                return createDummyData(name);
+            }
+        }
+
+        // Dummy generator for development fallback
+        function createDummyData(name) {
+            console.log(`Generating mockup data for ${name}...`);
+            const points = [];
+            const isStrict = name.includes("Strict");
+            const isDense = name.includes("Dense");
+            const isLenient = name.includes("Lenient");
+            
+            let count = isDense ? 1200 : (isStrict ? 250 : 600);
+            for (let i = 0; i < count; i++) {
+                // Generate points clustered around Ground Truths with noise based on strictness
+                const gt = groundTruthPedestrians[Math.floor(Math.random() * groundTruthPedestrians.length)];
+                const spread = isStrict ? 0.08 : (isLenient ? 0.4 : 0.15);
+                const noiseX = (Math.random() - 0.5) * spread;
+                const noiseY = (Math.random() - 0.5) * spread;
+                const noiseZ = Math.random() * 1.5;
+                
+                // Add some ray noise (streaks stretching towards origin) if lenient
+                if (isLenient && Math.random() < 0.25) {
+                    const t = Math.random();
+                    points.push([
+                        gt.x * t,
+                        gt.y * t,
+                        noiseZ
+                    ]);
+                } else {
+                    points.push([
+                        gt.x + noiseX,
+                        gt.y + noiseY,
+                        noiseZ
+                    ]);
+                }
+            }
+            
+            // Build costmap grid (200x200)
+            const gridData = new Array(200 * 200).fill(0);
+            points.forEach(p => {
+                const idxX = Math.floor((p[0] - (-10.0)) / 0.1);
+                const idxY = Math.floor((p[1] - (-10.0)) / 0.1);
+                if (idxX >= 0 && idxX < 200 && idxY >= 0 && idxY < 200) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        for (let dy = -1; dy <= 1; dy++) {
+                            const nx = idxX + dx;
+                            const ny = idxY + dy;
+                            if (nx >= 0 && nx < 200 && ny >= 0 && ny < 200) {
+                                gridData[ny * 200 + nx] = 100;
+                            }
+                        }
+                    }
+                }
+            });
+
+            return {
+                name: name,
+                parameters: {
+                    nfeatures: isDense ? 5000 : 3000,
+                    fast_threshold: isDense ? 5 : (isStrict ? 10 : 7),
+                    min_baseline: isStrict ? 0.20 : (isLenient ? 0.05 : 0.12),
+                    min_rotation: isStrict ? 0.26 : (isLenient ? 0.08 : 0.20),
+                    voxel_size: name.includes("Resolution") ? 0.02 : 0.05,
+                    match_threshold: isDense ? 70 : 60,
+                    parallax_threshold: isStrict ? 0.061 : 0.044,
+                    margin_ratio: isStrict ? 0.20 : 0.15
+                },
+                points: points,
+                grid: {
+                    resolution: 0.1,
+                    width: 200,
+                    height: 200,
+                    origin_x: -10.0,
+                    origin_y: -10.0,
+                    data: gridData
+                }
+            };
+        }
+
+        async function loadLeftModel(name) {
+            document.getElementById('left-3d-badge').innerText = name;
+            document.getElementById('left-2d-badge').innerText = name;
+            
+            const data = await fetchModelJSON(name);
+            modelData.left = data;
+            
+            document.getElementById('left-count').innerText = data.points.length.toLocaleString();
+            
+            updateParamComparison();
+            renderPlots('left');
+        }
+
+        async function loadRightModel(name) {
+            document.getElementById('right-3d-badge').innerText = name;
+            document.getElementById('right-2d-badge').innerText = name;
+            
+            const data = await fetchModelJSON(name);
+            modelData.right = data;
+            
+            document.getElementById('right-count').innerText = data.points.length.toLocaleString();
+            
+            updateParamComparison();
+            renderPlots('right');
+        }
+
+        // Render parameters comparison table
+        function updateParamComparison() {
+            if (!modelData.left || !modelData.right) return;
+            
+            const tbody = document.getElementById('param-comparison-body');
+            tbody.innerHTML = '';
+            
+            Object.keys(paramKeys).forEach(key => {
+                const tr = document.createElement('tr');
+                
+                const tdName = document.createElement('td');
+                tdName.innerText = paramKeys[key];
+                tdName.style.fontWeight = '600';
+                
+                const tdLeft = document.createElement('td');
+                tdLeft.className = 'val-left';
+                tdLeft.innerText = modelData.left.parameters[key];
+                
+                const tdRight = document.createElement('td');
+                tdRight.className = 'val-right';
+                tdRight.innerText = modelData.right.parameters[key];
+                
+                tr.appendChild(tdName);
+                tr.appendChild(tdLeft);
+                tr.appendChild(tdRight);
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Draw Plotly 3D and 2D charts
+        function renderPlots(side) {
+            const data = modelData[side];
+            if (!data) return;
+
+            const isLeft = side === 'left';
+            const colorScale = isLeft ? 'Blues' : 'Purples';
+            const markerColor = isLeft ? '#3b82f6' : '#a855f7';
+            
+            // ------------------ 3D Point Cloud Plot ------------------
+            const xs = data.points.map(p => p[0]);
+            const ys = data.points.map(p => p[1]);
+            const zs = data.points.map(p => p[2]);
+
+            // Trace 1: Reconstructed Points
+            const tracePoints = {
+                x: xs,
+                y: ys,
+                z: zs,
+                mode: 'markers',
+                type: 'scatter3d',
+                marker: {
+                    size: 3,
+                    color: zs, // color by Z height
+                    colorscale: colorScale,
+                    opacity: 0.8
+                },
+                name: 'Reconstructed Points'
+            };
+
+            // Trace 2: Robot circular path representation
+            const traceTrajectory = {
+                x: trajX,
+                y: trajY,
+                z: trajZ,
+                mode: 'lines',
+                type: 'scatter3d',
+                line: {
+                    color: '#f59e0b',
+                    width: 4
+                },
+                name: 'Robot Path (Radius 0.6m)'
+            };
+
+            // Trace 3-5: Ground Truth Pedestrians
+            const tracesGT = groundTruthPedestrians.map(gt => {
+                // Represent as a vertical line (cylinder center line) from Z=0 to Z=1.7m
+                return {
+                    x: [gt.x, gt.x],
+                    y: [gt.y, gt.y],
+                    z: [0, 1.7],
+                    mode: 'lines+markers',
+                    type: 'scatter3d',
+                    line: {
+                        color: gt.color,
+                        width: 8
+                    },
+                    marker: {
+                        size: 4,
+                        color: gt.color
+                    },
+                    name: `GT: ${gt.name}`
+                };
+            });
+
+            const data3D = [tracePoints, traceTrajectory, ...tracesGT];
+
+            const layout3D = {
+                paper_bgcolor: '#090d16',
+                plot_bgcolor: '#090d16',
+                margin: { l: 0, r: 0, b: 0, t: 0 },
+                scene: {
+                    xaxis: { 
+                        title: 'X (m)', 
+                        range: [-4, 4], 
+                        gridcolor: 'rgba(255,255,255,0.05)', 
+                        zerolinecolor: 'rgba(255,255,255,0.1)',
+                        backgroundcolor: '#090d16',
+                        showbackground: true
+                    },
+                    yaxis: { 
+                        title: 'Y (m)', 
+                        range: [-4, 4], 
+                        gridcolor: 'rgba(255,255,255,0.05)', 
+                        zerolinecolor: 'rgba(255,255,255,0.1)',
+                        backgroundcolor: '#090d16',
+                        showbackground: true
+                    },
+                    zaxis: { 
+                        title: 'Z (m)', 
+                        range: [0, 2.0], 
+                        gridcolor: 'rgba(255,255,255,0.05)', 
+                        zerolinecolor: 'rgba(255,255,255,0.1)',
+                        backgroundcolor: '#090d16',
+                        showbackground: true
+                    },
+                    camera: {
+                        eye: { x: 1.5, y: 1.5, z: 1.2 }
+                    }
+                },
+                showlegend: false
+            };
+
+            Plotly.newPlot(`${side}-3d-plot`, data3D, layout3D, {responsive: true, displayModeBar: false});
+
+            // ------------------ 2D Costmap Heatmap ------------------
+            if (data.grid) {
+                const grid = data.grid;
+                const width = grid.width;
+                const height = grid.height;
+                const res = grid.resolution;
+                
+                // Reshape 1D flat array to 2D numpy-like array
+                const matrix2D = [];
+                for (let y = 0; y < height; y++) {
+                    const row = [];
+                    for (let x = 0; x < width; x++) {
+                        row.push(grid.data[y * width + x]);
+                    }
+                    matrix2D.push(row);
+                }
+
+                // Coordinate ranges for axis labeling
+                const xRange = Array.from({length: width}, (_, x) => grid.origin_x + x * res);
+                const yRange = Array.from({length: height}, (_, y) => grid.origin_y + y * res);
+
+                const traceHeatmap = {
+                    x: xRange,
+                    y: yRange,
+                    z: matrix2D,
+                    type: 'heatmap',
+                    colorscale: [
+                        [0.0, '#090d16'],
+                        [0.1, 'rgba(59, 130, 246, 0.1)'],
+                        [0.5, 'rgba(245, 158, 11, 0.6)'],
+                        [1.0, '#ef4444'] // obstacles are bright red
+                    ],
+                    showscale: false,
+                    hoverongaps: false
+                };
+
+                // Overlay robot path and GT locations in 2D plot for clear comparison
+                const traceTraj2D = {
+                    x: trajX,
+                    y: trajY,
+                    mode: 'lines',
+                    line: { color: '#f59e0b', width: 2 },
+                    name: 'Robot Path'
+                };
+
+                const tracesGT2D = groundTruthPedestrians.map(gt => {
+                    return {
+                        x: [gt.x],
+                        y: [gt.y],
+                        mode: 'markers',
+                        marker: { color: gt.color, size: 10, symbol: 'x' },
+                        name: gt.name
+                    };
+                });
+
+                const data2D = [traceHeatmap, traceTraj2D, ...tracesGT2D];
+
+                const layout2D = {
+                    paper_bgcolor: '#090d16',
+                    plot_bgcolor: '#090d16',
+                    margin: { l: 40, r: 20, b: 40, t: 20 },
+                    xaxis: { 
+                        title: 'X (m)', 
+                        range: [-3, 3],
+                        gridcolor: 'rgba(255,255,255,0.05)',
+                        zerolinecolor: 'rgba(255,255,255,0.1)'
+                    },
+                    yaxis: { 
+                        title: 'Y (m)', 
+                        range: [-3, 3],
+                        gridcolor: 'rgba(255,255,255,0.05)',
+                        zerolinecolor: 'rgba(255,255,255,0.1)',
+                        scaleanchor: 'x' // keep square aspect ratio
+                    },
+                    showlegend: false
+                };
+
+                Plotly.newPlot(`${side}-2d-plot`, data2D, layout2D, {responsive: true, displayModeBar: false});
+            }
+        }
+    </script>
+</body>
+</html>

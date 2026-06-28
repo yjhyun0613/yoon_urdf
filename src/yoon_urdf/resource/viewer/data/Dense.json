@@ -1,0 +1,16 @@
+{
+  "name": "Dense",
+  "parameters": {
+    "algorithm_mode": "advanced_filter",
+    "nfeatures": 5000,
+    "fast_threshold": 5,
+    "min_baseline": 0.06,
+    "min_rotation": 0.1,
+    "voxel_size": 0.03,
+    "match_threshold": 70,
+    "parallax_threshold": 0.026,
+    "margin_ratio": 0.05
+  },
+  "points": [],
+  "grid": null
+}

@@ -4,3 +4,7 @@
 build/
 log/
 install/
+__pycache__/
+*.pt
+*.TXT
+.ipynb_checkpoints/
