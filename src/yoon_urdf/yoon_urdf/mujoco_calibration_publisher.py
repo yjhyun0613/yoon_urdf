@@ -22,7 +22,7 @@ class MujocoCalibrationPublisher(Node):
         self.declare_parameter('fovy', 60.0)
         self.fovy = self.get_parameter('fovy').value
         
-        # Calibration World XML (Only AMR robot and 4 cardinal checkerboard targets, no humanoid, no obstacles)
+        # Calibration World XML with a single mocap-controlled calibration board
         self.xml_string = f"""
         <mujoco model="calibration_simulation">
           <asset>
@@ -34,21 +34,14 @@ class MujocoCalibrationPublisher(Node):
             <light name="top_light" pos="0 0 4" dir="0 0 -1" castshadow="false"/>
             <geom name="floor" type="plane" size="10 10 0.1" rgba="0.8 0.8 0.8 1"/>
 
-            <!-- 3D Checkerboards and white backing boards for camera calibration (8x6 squares -> 7x5 inner corners) -->
-            <!-- Placed in 4 directions, facing oncoming camera perpendicularly for direct high-quality detection -->
-            <geom name="calibration_backing_1" type="box" size="0.01 0.45 0.35" pos="1.309 0.005 0.8" euler="0 10 -152.5" rgba="1 1 1 1"/>
-            <geom name="calibration_board_1" type="box" size="0.002 0.38 0.28" pos="1.3 0.0 0.8" euler="0 10 -152.5" material="mat_checker"/>
-            
-            <geom name="calibration_backing_2" type="box" size="0.01 0.45 0.35" pos="-0.005 1.309 0.8" euler="0 10 -62.5" rgba="1 1 1 1"/>
-            <geom name="calibration_board_2" type="box" size="0.002 0.38 0.28" pos="0.0 1.3 0.8" euler="0 10 -62.5" material="mat_checker"/>
-            
-            <geom name="calibration_backing_3" type="box" size="0.01 0.45 0.35" pos="-1.309 -0.005 0.8" euler="0 10 27.5" rgba="1 1 1 1"/>
-            <geom name="calibration_board_3" type="box" size="0.002 0.38 0.28" pos="-1.3 0.0 0.8" euler="0 10 27.5" material="mat_checker"/>
-            
-            <geom name="calibration_backing_4" type="box" size="0.01 0.45 0.35" pos="0.005 -1.309 0.8" euler="0 10 117.5" rgba="1 1 1 1"/>
-            <geom name="calibration_board_4" type="box" size="0.002 0.38 0.28" pos="0.0 -1.3 0.8" euler="0 10 117.5" material="mat_checker"/>
+            <!-- Mocap-controlled calibration board -->
+            <body name="calibration_board" mocap="true">
+              <geom name="calibration_backing" type="box" size="0.01 0.45 0.35" rgba="1 1 1 1"/>
+              <!-- Place the chessboard texture board 1.1cm in front of the backing board to prevent z-fighting -->
+              <geom name="calibration_board" type="box" size="0.002 0.38 0.28" pos="0.011 0 0" material="mat_checker"/>
+            </body>
 
-            <!-- AMR robot body -->
+            <!-- AMR robot body (Static at origin, camera looking forward +X) -->
             <body name="amr" pos="0 0 0.1">
               <freejoint name="amr_root"/>
               <!-- Base (Dark grey cylinder) -->
@@ -69,7 +62,7 @@ class MujocoCalibrationPublisher(Node):
         </mujoco>
         """
         
-        self.get_logger().info(f"Initializing Isolated MuJoCo Calibration Scene with fovy={self.fovy}...")
+        self.get_logger().info(f"Initializing Mocap Calibration Scene with fovy={self.fovy}...")
         self.model = mujoco.MjModel.from_xml_string(self.xml_string)
         self.data = mujoco.MjData(self.model)
         
@@ -85,39 +78,67 @@ class MujocoCalibrationPublisher(Node):
         
         # Timer for simulation step (20 Hz)
         self.timer = self.create_timer(0.05, self.timer_callback)
-        self.get_logger().info("Isolated Calibration Simulator initialized.")
+        self.get_logger().info("Mocap Calibration Simulator initialized.")
+
+    def euler_to_quat(self, roll, pitch, yaw):
+        cy = math.cos(yaw * 0.5)
+        sy = math.sin(yaw * 0.5)
+        cp = math.cos(pitch * 0.5)
+        sp = math.sin(pitch * 0.5)
+        cr = math.cos(roll * 0.5)
+        sr = math.sin(roll * 0.5)
+
+        qw = cr * cp * cy + sr * sp * sy
+        qx = sr * cp * cy - cr * sp * sy
+        qy = cr * sp * cy + sr * cp * sy
+        qz = cr * cp * sy - sr * sp * cy
+        return [qw, qx, qy, qz]
 
     def timer_callback(self):
         t = self.get_clock().now().nanoseconds * 1e-9
         
-        # 1. Make the AMR move in a circular trajectory of radius 0.6m
-        radius = 0.6
-        omega = 0.3
-        x_amr = radius * np.cos(omega * t)
-        y_amr = radius * np.sin(omega * t)
-        z_amr = 0.1
-        
-        heading = omega * t + np.pi / 2.0
-        
-        # AMR freejoint starts at qpos[0:7] (no humanoid in this model)
-        self.data.qpos[0] = x_amr
-        self.data.qpos[1] = y_amr
-        self.data.qpos[2] = z_amr
-        
-        # Quaternion for yaw rotation (heading) around Z-axis
-        self.data.qpos[3] = np.cos(heading / 2.0)  # w
-        self.data.qpos[4] = 0.0                     # x
-        self.data.qpos[5] = 0.0                     # y
-        self.data.qpos[6] = np.sin(heading / 2.0)  # z
-        
+        # 1. Keep the AMR robot static at the origin facing +X
+        self.data.qpos[0] = 0.0
+        self.data.qpos[1] = 0.0
+        self.data.qpos[2] = 0.1
+        self.data.qpos[3] = 1.0  # qw
+        self.data.qpos[4] = 0.0  # qx
+        self.data.qpos[5] = 0.0  # qy
+        self.data.qpos[6] = 0.0  # qz
         self.data.qvel[:] = 0.0
         
+        # 2. Animate the mocap calibration board to mimic a human waving it
+        # Camera is at absolute x=0.25, y=0.0, z=0.9
+        # Distance (X): Oscillate slowly between 0.6m and 1.1m from camera
+        d = 0.85 + 0.25 * math.sin(0.4 * t)
+        x_board = 0.25 + d
+        
+        # Horizontal (Y): Oscillate left/right to sweep boundary distortion
+        y_board = 0.3 * math.sin(0.6 * t)
+        
+        # Vertical (Z): Oscillate up/down around the camera height (0.9m)
+        z_board = 0.9 + 0.2 * math.cos(0.5 * t)
+        
+        # Angles (Roll/Pitch/Yaw): Tilt the board for perspective diversity
+        roll = 0.3 * math.sin(0.7 * t)
+        pitch = 0.3 * math.cos(0.5 * t)
+        # Board faces camera, so yaw is around 180 degrees (pi rad)
+        yaw = math.pi + 0.3 * math.sin(0.3 * t)
+        
+        qw, qx, qy, qz = self.euler_to_quat(roll, pitch, yaw)
+        
+        # Write mocap pose to MuJoCo
+        mocap_id = self.model.body_mocapid[mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "calibration_board")]
+        self.data.mocap_pos[mocap_id] = [x_board, y_board, z_board]
+        self.data.mocap_quat[mocap_id] = [qw, qx, qy, qz]
+        
+        # Step simulation
         mujoco.mj_step(self.model, self.data)
         
         if self.viewer.is_running():
             self.viewer.sync()
         
-        # Render onboard camera
+        # Render onboard camera view
         self.renderer.update_scene(self.data, camera="onboard_camera")
         rgb_img = self.renderer.render()
         bgr_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2BGR)
@@ -146,21 +167,21 @@ class MujocoCalibrationPublisher(Node):
         info_msg.p = [fx, 0.0, cx, 0.0, 0.0, fy, cy, 0.0, 0.0, 0.0, 1.0, 0.0]
         self.info_pub.publish(info_msg)
         
-        # Publish AMR Pose
+        # Publish static AMR Pose
         pose_msg = PoseStamped()
         pose_msg.header.stamp = now_msg
         pose_msg.header.frame_id = "map"
-        pose_msg.pose.position.x = x_amr
-        pose_msg.pose.position.y = y_amr
-        pose_msg.pose.position.z = z_amr
-        pose_msg.pose.orientation.w = self.data.qpos[3]
+        pose_msg.pose.position.x = 0.0
+        pose_msg.pose.position.y = 0.0
+        pose_msg.pose.position.z = 0.1
+        pose_msg.pose.orientation.w = 1.0
         pose_msg.pose.orientation.x = 0.0
         pose_msg.pose.orientation.y = 0.0
-        pose_msg.pose.orientation.z = self.data.qpos[6]
+        pose_msg.pose.orientation.z = 0.0
         self.pose_pub.publish(pose_msg)
         
         # Show view GUI
-        cv2.imshow("Calibration Onboard Camera View", bgr_img)
+        cv2.imshow("Mocap Calibration Onboard Camera View", bgr_img)
         cv2.waitKey(1)
 
     def destroy_node(self):
