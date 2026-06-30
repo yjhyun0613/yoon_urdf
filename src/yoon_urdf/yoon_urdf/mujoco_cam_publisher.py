@@ -32,7 +32,7 @@ class MujocoCamPublisher(Node):
 
           <asset>
             <texture name="checkerboard" type="2d" builtin="checker" width="512" height="512" rgb1=".1 .1 .1" rgb2=".9 .9 .9"/>
-            <material name="mat_checker" texture="checkerboard" texrepeat="4 3" texuniform="true"/>
+            <material name="mat_checker" texture="checkerboard" texrepeat="4 3"/>
           </asset>
 
           <worldbody>
