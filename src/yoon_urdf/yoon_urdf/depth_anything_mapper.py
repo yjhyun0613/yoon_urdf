@@ -69,6 +69,14 @@ class DepthAnythingMapper(Node):
         self.robot_yaw = 0.0
         self.robot_pose_received = False
         
+        # Running scale normalization parameters
+        self.running_min = None
+        self.running_max = None
+        
+        # Temporal smoothing history
+        from collections import deque
+        self.depth_history = deque(maxlen=3)
+        
         # Setup Depth Anything V2 model
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.get_logger().info(f"Loading Depth Anything model: {model_id} on device: {self.device}...")
@@ -175,16 +183,31 @@ class DepthAnythingMapper(Node):
         self.get_logger().info(f"AI Depth Inference time: {(t_end - t_start)*1000:.1f}ms", throttle_duration_sec=3.0)
         
         # 4. Scale normalization and Metric mapping
-        # Higher prediction value means closer. Let's normalize it to [0, 1]
         d_min = depth_np.min()
         d_max = depth_np.max()
-        if d_max - d_min > 1e-5:
-            d_norm = (depth_np - d_min) / (d_max - d_min)
+        
+        # Initialize or smoothly update running min/max parameters to stabilize absolute depth scale
+        if self.running_min is None:
+            self.running_min = d_min
+            self.running_max = d_max
+        else:
+            alpha_scale = 0.90
+            self.running_min = alpha_scale * self.running_min + (1.0 - alpha_scale) * d_min
+            self.running_max = alpha_scale * self.running_max + (1.0 - alpha_scale) * d_max
+            
+        span = self.running_max - self.running_min
+        if span > 1e-5:
+            d_norm = (depth_np - self.running_min) / span
+            d_norm = np.clip(d_norm, 0.0, 1.0)
         else:
             d_norm = np.zeros_like(depth_np)
             
         # Inverse depth (disparity) mapping: 1.0 (closest) -> min_depth, 0.0 (furthest) -> max_depth
-        depth_metric = 1.0 / ( (1.0 / self.max_depth) + d_norm * ( (1.0 / self.min_depth) - (1.0 / self.max_depth) ) )
+        raw_depth_metric = 1.0 / ( (1.0 / self.max_depth) + d_norm * ( (1.0 / self.min_depth) - (1.0 / self.max_depth) ) )
+        
+        # Temporal smoothing: pixel-wise average of the last 3 depth maps to prevent flickering & ghosting
+        self.depth_history.append(raw_depth_metric)
+        depth_metric = np.mean(self.depth_history, axis=0)
         
         # 5. Project to 3D Points
         semantic_points = []
