@@ -8,6 +8,7 @@ import numpy as np
 import yaml
 import sys
 import time
+import os
 
 class AutoCalibrateTest(Node):
     def __init__(self):
@@ -28,6 +29,10 @@ class AutoCalibrateTest(Node):
         self.last_capture_time = 0.0
         self.output_file = '/home/yoon/yoon_urdf/auto_camera_calibration.yaml'
         self.latest_gray_shape = None
+        
+        # Create directory for saving calibration images
+        self.save_dir = '/home/yoon/yoon_urdf/calibration_images'
+        os.makedirs(self.save_dir, exist_ok=True)
         
         self.image_sub = self.create_subscription(
             Image,
@@ -73,9 +78,16 @@ class AutoCalibrateTest(Node):
                 self.imgpoints.append(corners2)
                 self.captured_count += 1
                 self.last_capture_time = now
-                self.get_logger().info(f"[AUTO] Captured frame #{self.captured_count}")
                 
-                if self.captured_count >= 8:
+                # Save the captured frame with detected corners drawn
+                vis_img = cv_image.copy()
+                cv2.drawChessboardCorners(vis_img, (self.cb_width, self.cb_height), corners2, ret)
+                save_path = os.path.join(self.save_dir, f'frame_{self.captured_count:02d}.png')
+                cv2.imwrite(save_path, vis_img)
+                
+                self.get_logger().info(f"[AUTO] Captured frame #{self.captured_count} -> {save_path}")
+                
+                if self.captured_count >= 30:
                     self.run_calibration()
 
     def run_calibration(self):

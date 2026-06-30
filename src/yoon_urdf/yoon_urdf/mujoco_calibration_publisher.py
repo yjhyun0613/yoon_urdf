@@ -107,23 +107,27 @@ class MujocoCalibrationPublisher(Node):
         self.data.qpos[6] = 0.0  # qz
         self.data.qvel[:] = 0.0
         
-        # 2. Animate the mocap calibration board to mimic a human waving it
+        # 2. Animate the mocap calibration board to cover the FULL camera FOV
         # Camera is at absolute x=0.25, y=0.0, z=0.9
-        # Distance (X): Oscillate slowly between 0.6m and 1.1m from camera
-        d = 0.85 + 0.25 * math.sin(0.4 * t)
+        # Use multi-frequency oscillations to ensure board visits all corners,
+        # edges, and side regions of the image (critical for distortion calibration).
+        
+        # Distance (X): Oscillate between 0.5m ~ 1.2m from camera
+        d = 0.85 + 0.35 * math.sin(0.35 * t)
         x_board = 0.25 + d
         
-        # Horizontal (Y): Oscillate left/right to sweep boundary distortion
-        y_board = 0.3 * math.sin(0.6 * t)
+        # Horizontal (Y): Wide sweep to reach left/right edges of frame
+        # Combine two frequencies to break symmetry and cover irregular positions
+        y_board = 0.55 * math.sin(0.47 * t) + 0.15 * math.sin(1.1 * t)
         
-        # Vertical (Z): Oscillate up/down around the camera height (0.9m)
-        z_board = 0.9 + 0.2 * math.cos(0.5 * t)
+        # Vertical (Z): Wide sweep to reach top/bottom edges of frame
+        z_board = 0.9 + 0.40 * math.cos(0.39 * t) + 0.10 * math.cos(0.97 * t)
         
-        # Angles (Roll/Pitch/Yaw): Tilt the board for perspective diversity
-        roll = 0.3 * math.sin(0.7 * t)
-        pitch = 0.3 * math.cos(0.5 * t)
+        # Angles (Roll/Pitch/Yaw): More aggressive tilts for perspective diversity
+        roll = 0.35 * math.sin(0.7 * t)
+        pitch = 0.35 * math.cos(0.53 * t)
         # Board faces camera, so yaw is around 180 degrees (pi rad)
-        yaw = math.pi + 0.3 * math.sin(0.3 * t)
+        yaw = math.pi + 0.35 * math.sin(0.31 * t)
         
         qw, qx, qy, qz = self.euler_to_quat(roll, pitch, yaw)
         
