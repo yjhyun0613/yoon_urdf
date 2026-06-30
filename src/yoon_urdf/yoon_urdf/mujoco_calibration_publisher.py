@@ -26,8 +26,8 @@ class MujocoCalibrationPublisher(Node):
         self.xml_string = f"""
         <mujoco model="calibration_simulation">
           <asset>
-            <texture name="checkerboard" type="2d" file="/home/yoon/yoon_urdf/src/yoon_urdf/resource/checkerboard.png"/>
-            <material name="mat_checker" texture="checkerboard"/>
+            <texture name="checkerboard" type="2d" builtin="checker" width="512" height="512" rgb1=".1 .1 .1" rgb2=".9 .9 .9"/>
+            <material name="mat_checker" texture="checkerboard" texrepeat="4 3"/>
           </asset>
 
           <worldbody>
@@ -36,9 +36,9 @@ class MujocoCalibrationPublisher(Node):
 
             <!-- Mocap-controlled calibration board -->
             <body name="calibration_board" mocap="true">
-              <geom name="calibration_backing" type="box" size="0.01 0.45 0.35" rgba="1 1 1 1"/>
+              <geom name="calibration_backing" type="plane" size="0.45 0.35 0.002" euler="0 90 0" rgba="1 1 1 1"/>
               <!-- Place the chessboard texture board 1.1cm in front of the backing board to prevent z-fighting -->
-              <geom name="calibration_board" type="box" size="0.002 0.38 0.28" pos="0.011 0 0" material="mat_checker"/>
+              <geom name="calibration_board" type="plane" size="0.38 0.28 0.002" pos="0.011 0 0" euler="0 90 0" material="mat_checker"/>
             </body>
 
             <!-- AMR robot body (Static at origin, camera looking forward +X) -->
