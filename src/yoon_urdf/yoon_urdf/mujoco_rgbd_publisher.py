@@ -20,8 +20,8 @@ class MujocoRgbdPublisher(Node):
         self.info_pub = self.create_publisher(CameraInfo, '/camera/camera_info', 10)
         self.pose_pub = self.create_publisher(PoseStamped, '/robot_global_pose', 10)
         
-        # Declare fovy parameter (default 60 degrees for standard perspective lens)
-        self.declare_parameter('fovy', 60.0)
+        # Declare fovy parameter (default 90 degrees for standard perspective lens)
+        self.declare_parameter('fovy', 90.0)
         self.fovy = self.get_parameter('fovy').value
         
         # Integrated scene XML: Include humanoid.xml, and add AMR body in worldbody

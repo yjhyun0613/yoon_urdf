@@ -19,7 +19,7 @@ class MujocoCalibrationPublisher(Node):
         self.info_pub = self.create_publisher(CameraInfo, '/camera/camera_info', 10)
         self.pose_pub = self.create_publisher(PoseStamped, '/robot_global_pose', 10)
         
-        self.declare_parameter('fovy', 60.0)
+        self.declare_parameter('fovy', 90.0)
         self.fovy = self.get_parameter('fovy').value
         
         # Calibration World XML with a single mocap-controlled calibration board
