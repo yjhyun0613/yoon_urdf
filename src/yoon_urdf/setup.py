@@ -34,6 +34,7 @@ setup(
             'depth_anything_mapper = yoon_urdf.depth_anything_mapper:main',
             'calibrate_camera = yoon_urdf.calibrate_camera:main',
             'test_calibration_auto = yoon_urdf.test_calibration_auto:main',
+            'mujoco_calibration_publisher = yoon_urdf.mujoco_calibration_publisher:main',
         ],
     },
 )
