@@ -26,8 +26,8 @@ class MujocoCalibrationPublisher(Node):
         self.xml_string = f"""
         <mujoco model="calibration_simulation">
           <asset>
-            <texture name="checkerboard" type="2d" builtin="checker" width="512" height="512" rgb1=".1 .1 .1" rgb2=".9 .9 .9"/>
-            <material name="mat_checker" texture="checkerboard" texrepeat="4 3"/>
+            <texture name="checkerboard" type="2d" file="/home/yoon/yoon_urdf/src/yoon_urdf/resource/checkerboard.png"/>
+            <material name="mat_checker" texture="checkerboard"/>
           </asset>
 
           <worldbody>

@@ -79,7 +79,19 @@ class CalibrateCameraNode(Node):
         
         display_img = cv_image.copy()
         
+        # Check boundary margin if corners are found
+        all_inside = True
         if ret:
+            h_img, w_img = gray.shape
+            margin = 25.0
+            corners_flat = corners.reshape(-1, 2)
+            for pt in corners_flat:
+                cx, cy = pt[0], pt[1]
+                if cx < margin or cx > (w_img - margin) or cy < margin or cy > (h_img - margin):
+                    all_inside = False
+                    break
+        
+        if ret and all_inside:
             # Refine corner locations to sub-pixel accuracy
             corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), self.criteria)
             self.latest_corners = corners2
@@ -88,6 +100,12 @@ class CalibrateCameraNode(Node):
             cv2.drawChessboardCorners(display_img, (self.cb_width, self.cb_height), corners2, ret)
             cv2.putText(display_img, "Chessboard DETECTED! Press 'c' to capture.", (15, 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+        elif ret and not all_inside:
+            self.latest_corners = None
+            # Draw corners in red to show they are rejected due to boundary
+            cv2.drawChessboardCorners(display_img, (self.cb_width, self.cb_height), corners, False)
+            cv2.putText(display_img, "REJECTED: Too close to edge!", (15, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
         else:
             self.latest_corners = None
             cv2.putText(display_img, "Searching for Checkerboard...", (15, 30),

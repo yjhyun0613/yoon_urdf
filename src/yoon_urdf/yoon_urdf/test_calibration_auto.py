@@ -49,6 +49,20 @@ class AutoCalibrateTest(Node):
         ret, corners = cv2.findChessboardCorners(gray, (self.cb_width, self.cb_height), None)
         
         if ret:
+            # Safe border margin: Reject frames where any corner is within 25 pixels of the image edge
+            h, w = gray.shape
+            margin = 25.0
+            corners_flat = corners.reshape(-1, 2)
+            all_inside = True
+            for pt in corners_flat:
+                cx, cy = pt[0], pt[1]
+                if cx < margin or cx > (w - margin) or cy < margin or cy > (h - margin):
+                    all_inside = False
+                    break
+            
+            if not all_inside:
+                return
+                
             now = time.time()
             # Capture at most once every 1.5 seconds to get different perspectives as the robot moves
             if now - self.last_capture_time > 1.5:
