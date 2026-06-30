@@ -37,12 +37,12 @@ class MujocoRgbdPublisher(Node):
 
           <worldbody>
             <!-- 3D Checkerboards and white backing boards for camera calibration (8x6 squares -> 7x5 inner corners) -->
-            <!-- Backing geoms are slightly larger and white to act as the chessboard quiet zone/border -->
-            <geom name="calibration_backing_1" type="box" size="0.01 0.45 0.35" pos="1.21 -0.166 0.8" euler="10 -10 202" rgba="1 1 1 1"/>
-            <geom name="calibration_board_1" type="box" size="0.002 0.38 0.28" pos="1.2 -0.17 0.8" euler="10 -10 202" material="mat_checker"/>
+            <!-- Placed behind the robot path facing forward to match the backward-looking camera view -->
+            <geom name="calibration_backing_1" type="box" size="0.01 0.45 0.35" pos="0.6 -0.51 0.8" euler="0 -10 90" rgba="1 1 1 1"/>
+            <geom name="calibration_board_1" type="box" size="0.002 0.38 0.28" pos="0.6 -0.5 0.8" euler="0 -10 90" material="mat_checker"/>
             
-            <geom name="calibration_backing_2" type="box" size="0.01 0.45 0.35" pos="-0.157 0.997 0.8" euler="5 10 315" rgba="1 1 1 1"/>
-            <geom name="calibration_board_2" type="box" size="0.002 0.38 0.28" pos="-0.15 0.99 0.8" euler="5 10 315" material="mat_checker"/>
+            <geom name="calibration_backing_2" type="box" size="0.01 0.45 0.35" pos="0.51 0.6 0.8" euler="10 0 180" rgba="1 1 1 1"/>
+            <geom name="calibration_board_2" type="box" size="0.002 0.38 0.28" pos="0.5 0.6 0.8" euler="10 0 180" material="mat_checker"/>
 
             <!-- Three colored cylinder target obstacles representing pedestrians in the hall -->
             <!-- Size: radius=0.2m, half-height=0.85m (full height = 1.7m) -->
