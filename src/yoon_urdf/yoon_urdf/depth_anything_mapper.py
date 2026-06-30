@@ -183,8 +183,8 @@ class DepthAnythingMapper(Node):
         else:
             d_norm = np.zeros_like(depth_np)
             
-        # Linear inverse depth mapping: 1.0 (closest) -> min_depth, 0.0 (furthest) -> max_depth
-        depth_metric = self.min_depth + (1.0 - d_norm) * (self.max_depth - self.min_depth)
+        # Inverse depth (disparity) mapping: 1.0 (closest) -> min_depth, 0.0 (furthest) -> max_depth
+        depth_metric = 1.0 / ( (1.0 / self.max_depth) + d_norm * ( (1.0 / self.min_depth) - (1.0 / self.max_depth) ) )
         
         # 5. Project to 3D Points
         semantic_points = []
