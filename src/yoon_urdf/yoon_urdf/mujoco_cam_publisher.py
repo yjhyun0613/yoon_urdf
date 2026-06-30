@@ -8,6 +8,8 @@ import mujoco
 import mujoco.viewer
 import cv2
 import numpy as np
+import yaml
+import os
 
 import math
 
@@ -23,6 +25,20 @@ class MujocoCamPublisher(Node):
         # Declare fovy parameter (default 90 degrees for standard perspective lens)
         self.declare_parameter('fovy', 90.0)
         self.fovy = self.get_parameter('fovy').value
+        
+        # Load camera calibration for undistortion display
+        self.camera_matrix = None
+        self.distortion_coeffs = None
+        yaml_path = '/home/yoon/yoon_urdf/auto_camera_calibration.yaml'
+        if os.path.exists(yaml_path):
+            try:
+                with open(yaml_path, 'r') as f:
+                    calib_data = yaml.safe_load(f)
+                self.camera_matrix = np.array(calib_data['camera_matrix']['data']).reshape((3, 3))
+                self.distortion_coeffs = np.array(calib_data['distortion_coefficients']['data'])
+                self.get_logger().info(f'Loaded calibration from {yaml_path} for undistorted display')
+            except Exception as e:
+                self.get_logger().warn(f'Failed to load calibration: {e}')
         
         # Integrated scene XML: Include humanoid.xml, and add AMR body in worldbody
         # Place three distinct pedestrian cylinder targets at different locations
@@ -171,7 +187,11 @@ class MujocoCamPublisher(Node):
             if static_counter == 5:
                 cv2.imwrite("/home/yoon/.gemini/antigravity/brain/6911cae0-1963-4d05-b904-fabf0acdbae7/amr_onboard_view.png", bgr_img)
 
-        # Show what the onboard camera sees
+        # Apply undistortion if calibration is loaded
+        if self.camera_matrix is not None and self.distortion_coeffs is not None:
+            bgr_img = cv2.undistort(bgr_img, self.camera_matrix, self.distortion_coeffs)
+        
+        # Show what the onboard camera sees (undistorted)
         cv2.imshow("AMR Onboard Camera View", bgr_img)
         cv2.waitKey(1)
 
