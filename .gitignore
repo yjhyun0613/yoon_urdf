@@ -8,3 +8,6 @@ __pycache__/
 *.pt
 *.TXT
 .ipynb_checkpoints/
+debug_images/
+saved_maps/
+*.ply

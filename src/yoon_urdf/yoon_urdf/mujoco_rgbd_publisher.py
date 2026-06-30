@@ -8,15 +8,15 @@ import mujoco
 import mujoco.viewer
 import cv2
 import numpy as np
-
 import math
 
-class MujocoCamPublisher(Node):
+class MujocoRgbdPublisher(Node):
     def __init__(self):
-        super().__init__('mujoco_cam_publisher')
+        super().__init__('mujoco_rgbd_publisher')
         
         # ROS2 Publishers
         self.img_pub = self.create_publisher(Image, '/camera/image_raw', 10)
+        self.depth_pub = self.create_publisher(Image, '/camera/depth/image_raw', 10)
         self.info_pub = self.create_publisher(CameraInfo, '/camera/camera_info', 10)
         self.pose_pub = self.create_publisher(PoseStamped, '/robot_global_pose', 10)
         
@@ -37,12 +37,12 @@ class MujocoCamPublisher(Node):
 
           <worldbody>
             <!-- 3D Checkerboards and white backing boards for camera calibration (8x6 squares -> 7x5 inner corners) -->
-            <!-- Placed on the circular trajectory path, facing oncoming camera for direct/clear views -->
-            <geom name="calibration_backing_1" type="box" size="0.01 0.45 0.35" pos="0.81 -0.6 0.8" euler="10 0 180" rgba="1 1 1 1"/>
-            <geom name="calibration_board_1" type="box" size="0.002 0.38 0.28" pos="0.8 -0.6 0.8" euler="10 0 180" material="mat_checker"/>
+            <!-- Backing geoms are slightly larger and white to act as the chessboard quiet zone/border -->
+            <geom name="calibration_backing_1" type="box" size="0.01 0.45 0.35" pos="1.21 -0.166 0.8" euler="10 -10 202" rgba="1 1 1 1"/>
+            <geom name="calibration_board_1" type="box" size="0.002 0.38 0.28" pos="1.2 -0.17 0.8" euler="10 -10 202" material="mat_checker"/>
             
-            <geom name="calibration_backing_2" type="box" size="0.01 0.45 0.35" pos="0.6 0.81 0.8" euler="0 10 -90" rgba="1 1 1 1"/>
-            <geom name="calibration_board_2" type="box" size="0.002 0.38 0.28" pos="0.6 0.8 0.8" euler="0 10 -90" material="mat_checker"/>
+            <geom name="calibration_backing_2" type="box" size="0.01 0.45 0.35" pos="-0.157 0.997 0.8" euler="5 10 315" rgba="1 1 1 1"/>
+            <geom name="calibration_board_2" type="box" size="0.002 0.38 0.28" pos="-0.15 0.99 0.8" euler="5 10 315" material="mat_checker"/>
 
             <!-- Three colored cylinder target obstacles representing pedestrians in the hall -->
             <!-- Size: radius=0.2m, half-height=0.85m (full height = 1.7m) -->
@@ -71,7 +71,7 @@ class MujocoCamPublisher(Node):
         </mujoco>
         """
         
-        self.get_logger().info(f"Initializing MuJoCo Integrated Scene with fovy={self.fovy}...")
+        self.get_logger().info(f"Initializing MuJoCo Integrated RGB-D Scene with fovy={self.fovy}...")
         self.model = mujoco.MjModel.from_xml_string(self.xml_string)
         self.data = mujoco.MjData(self.model)
         
@@ -87,7 +87,7 @@ class MujocoCamPublisher(Node):
         
         # Timer for simulation step, render, and publishing (20 Hz)
         self.timer = self.create_timer(0.05, self.timer_callback)
-        self.get_logger().info("MuJoCo Integrated Simulator initialized.")
+        self.get_logger().info("MuJoCo Integrated RGB-D Simulator initialized.")
 
     def timer_callback(self):
         t = self.get_clock().now().nanoseconds * 1e-9
@@ -130,21 +130,32 @@ class MujocoCamPublisher(Node):
         if self.viewer.is_running():
             self.viewer.sync()
         
-        # 3. Render the scene from the AMR's onboard camera
+        # 3. Render the scene from the AMR's onboard camera (RGB)
         self.renderer.update_scene(self.data, camera="onboard_camera")
         rgb_img = self.renderer.render()
         bgr_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2BGR)
         
+        # 4. Render the scene from the AMR's onboard camera (Depth)
+        self.renderer.enable_depth_rendering()
+        depth_img = self.renderer.render()
+        self.renderer.disable_depth_rendering()
+        
         # Create stamp
         now_msg = self.get_clock().now().to_msg()
         
-        # 4. Publish Image
+        # 5. Publish Image
         img_msg = self.bridge.cv2_to_imgmsg(bgr_img, encoding="bgr8")
         img_msg.header.stamp = now_msg
         img_msg.header.frame_id = "camera_link"
         self.img_pub.publish(img_msg)
         
-        # 5. Publish CameraInfo (calculated dynamically based on fovy parameter)
+        # 6. Publish Depth Image (encoding="32FC1")
+        depth_msg = self.bridge.cv2_to_imgmsg(depth_img, encoding="32FC1")
+        depth_msg.header.stamp = now_msg
+        depth_msg.header.frame_id = "camera_link"
+        self.depth_pub.publish(depth_msg)
+        
+        # 7. Publish CameraInfo (calculated dynamically based on fovy parameter)
         info_msg = CameraInfo()
         info_msg.header.stamp = now_msg
         info_msg.header.frame_id = "camera_link"
@@ -160,7 +171,7 @@ class MujocoCamPublisher(Node):
         info_msg.p = [fx, 0.0, cx, 0.0, 0.0, fy, cy, 0.0, 0.0, 0.0, 1.0, 0.0]
         self.info_pub.publish(info_msg)
         
-        # 6. Publish AMR's global PoseStamped
+        # 8. Publish AMR's global PoseStamped
         pose_msg = PoseStamped()
         pose_msg.header.stamp = now_msg
         pose_msg.header.frame_id = "map"
@@ -173,15 +184,17 @@ class MujocoCamPublisher(Node):
         pose_msg.pose.orientation.z = self.data.qpos[34]
         self.pose_pub.publish(pose_msg)
         
-        # Save sample image for walkthrough
-        static_counter = getattr(self, '_sample_save_counter', 0)
-        if static_counter < 10:
-            setattr(self, '_sample_save_counter', static_counter + 1)
-            if static_counter == 5:
-                cv2.imwrite("/home/yoon/.gemini/antigravity/brain/6911cae0-1963-4d05-b904-fabf0acdbae7/amr_onboard_view.png", bgr_img)
-
         # Show what the onboard camera sees
-        cv2.imshow("AMR Onboard Camera View", bgr_img)
+        cv2.imshow("AMR Onboard RGB Camera View", bgr_img)
+        
+        # Visualize depth (normalized to 0-255 for display)
+        depth_vis = depth_img.copy()
+        # Cap depth at 5.0m for better visualization contrast
+        depth_vis[depth_vis > 5.0] = 5.0
+        depth_vis = (depth_vis / 5.0 * 255.0).astype(np.uint8)
+        depth_colored = cv2.applyColorMap(depth_vis, cv2.COLORMAP_JET)
+        cv2.imshow("AMR Onboard Depth Camera View", depth_colored)
+        
         cv2.waitKey(1)
 
     def destroy_node(self):
@@ -192,7 +205,7 @@ class MujocoCamPublisher(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = MujocoCamPublisher()
+    node = MujocoRgbdPublisher()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

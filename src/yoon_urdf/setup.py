@@ -28,6 +28,12 @@ setup(
             'feature_mapper = yoon_urdf.feature_mapper:main',
             'risk_map_generator = yoon_urdf.risk_map_generator:main',
             'mujoco_cam_publisher = yoon_urdf.mujoco_cam_publisher:main',
+            'mujoco_rgbd_publisher = yoon_urdf.mujoco_rgbd_publisher:main',
+            'rgbd_mapper = yoon_urdf.rgbd_mapper:main',
+            'pointcloud_saver = yoon_urdf.pointcloud_saver:main',
+            'depth_anything_mapper = yoon_urdf.depth_anything_mapper:main',
+            'calibrate_camera = yoon_urdf.calibrate_camera:main',
+            'test_calibration_auto = yoon_urdf.test_calibration_auto:main',
         ],
     },
 )
