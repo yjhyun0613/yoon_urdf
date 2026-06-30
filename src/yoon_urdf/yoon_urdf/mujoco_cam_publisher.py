@@ -37,18 +37,18 @@ class MujocoCamPublisher(Node):
 
           <worldbody>
             <!-- 3D Checkerboards and white backing boards for camera calibration (8x6 squares -> 7x5 inner corners) -->
-            <!-- Placed in 4 directions, facing oncoming camera for maximum detection opportunities -->
-            <geom name="calibration_backing_1" type="box" size="0.01 0.45 0.35" pos="1.3 0.01 0.8" euler="0 10 -90" rgba="1 1 1 1"/>
-            <geom name="calibration_board_1" type="box" size="0.002 0.38 0.28" pos="1.3 0.0 0.8" euler="0 10 -90" material="mat_checker"/>
+            <!-- Placed in 4 directions, facing oncoming camera perpendicularly for direct high-quality detection -->
+            <geom name="calibration_backing_1" type="box" size="0.01 0.45 0.35" pos="1.309 0.005 0.8" euler="0 10 -152.5" rgba="1 1 1 1"/>
+            <geom name="calibration_board_1" type="box" size="0.002 0.38 0.28" pos="1.3 0.0 0.8" euler="0 10 -152.5" material="mat_checker"/>
             
-            <geom name="calibration_backing_2" type="box" size="0.01 0.45 0.35" pos="-0.01 1.3 0.8" euler="10 0 0" rgba="1 1 1 1"/>
-            <geom name="calibration_board_2" type="box" size="0.002 0.38 0.28" pos="0.0 1.3 0.8" euler="10 0 0" material="mat_checker"/>
+            <geom name="calibration_backing_2" type="box" size="0.01 0.45 0.35" pos="-0.005 1.309 0.8" euler="0 10 -62.5" rgba="1 1 1 1"/>
+            <geom name="calibration_board_2" type="box" size="0.002 0.38 0.28" pos="0.0 1.3 0.8" euler="0 10 -62.5" material="mat_checker"/>
             
-            <geom name="calibration_backing_3" type="box" size="0.01 0.45 0.35" pos="-1.3 -0.01 0.8" euler="0 10 90" rgba="1 1 1 1"/>
-            <geom name="calibration_board_3" type="box" size="0.002 0.38 0.28" pos="-1.3 0.0 0.8" euler="0 10 90" material="mat_checker"/>
+            <geom name="calibration_backing_3" type="box" size="0.01 0.45 0.35" pos="-1.309 -0.005 0.8" euler="0 10 27.5" rgba="1 1 1 1"/>
+            <geom name="calibration_board_3" type="box" size="0.002 0.38 0.28" pos="-1.3 0.0 0.8" euler="0 10 27.5" material="mat_checker"/>
             
-            <geom name="calibration_backing_4" type="box" size="0.01 0.45 0.35" pos="0.01 -1.3 0.8" euler="10 0 180" rgba="1 1 1 1"/>
-            <geom name="calibration_board_4" type="box" size="0.002 0.38 0.28" pos="0.0 -1.3 0.8" euler="10 0 180" material="mat_checker"/>
+            <geom name="calibration_backing_4" type="box" size="0.01 0.45 0.35" pos="0.005 -1.309 0.8" euler="0 10 117.5" rgba="1 1 1 1"/>
+            <geom name="calibration_board_4" type="box" size="0.002 0.38 0.28" pos="0.0 -1.3 0.8" euler="0 10 117.5" material="mat_checker"/>
 
             <!-- Three colored cylinder target obstacles representing pedestrians in the hall -->
             <!-- Size: radius=0.2m, half-height=0.85m (full height = 1.7m) -->
