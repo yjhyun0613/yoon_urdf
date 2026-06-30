@@ -11,6 +11,8 @@ import struct
 import message_filters
 from message_filters import Subscriber, ApproximateTimeSynchronizer
 from ultralytics import YOLO
+import yaml
+import os
 
 class RgbdMapper(Node):
     def __init__(self):
@@ -41,13 +43,29 @@ class RgbdMapper(Node):
             
         self.bridge = CvBridge()
         
-        # Camera Intrinsics (Dynamic from CameraInfo)
+        # Camera Intrinsics (Dynamic from CameraInfo or calibration file)
         self.fx = None
         self.fy = None
         self.cx = None
         self.cy = None
         self.camera_matrix = None
         self.distortion_coeffs = None
+        
+        # Load calibration parameters from auto_camera_calibration.yaml if exists
+        yaml_path = "/home/yoon/yoon_urdf/auto_camera_calibration.yaml"
+        if os.path.exists(yaml_path):
+            try:
+                with open(yaml_path, 'r') as f:
+                    calib_data = yaml.safe_load(f)
+                self.camera_matrix = np.array(calib_data['camera_matrix']['data']).reshape((3, 3))
+                self.distortion_coeffs = np.array(calib_data['distortion_coefficients']['data'])
+                self.fx = self.camera_matrix[0, 0]
+                self.fy = self.camera_matrix[1, 1]
+                self.cx = self.camera_matrix[0, 2]
+                self.cy = self.camera_matrix[1, 2]
+                self.get_logger().info(f"Successfully loaded calibration parameters from {yaml_path}")
+            except Exception as e:
+                self.get_logger().error(f"Failed to load calibration from {yaml_path}: {e}")
         
         # Robot global pose
         self.robot_x = 0.0
