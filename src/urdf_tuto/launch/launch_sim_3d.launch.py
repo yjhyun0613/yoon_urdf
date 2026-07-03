@@ -9,6 +9,7 @@ from launch.substitutions import LaunchConfiguration
 def generate_launch_description():
     package_name = "urdf_tuto"
     target_frame = LaunchConfiguration("target_frame")
+    world = LaunchConfiguration("world")
 
     # Robot State Publisher for 3D Robot Model
     rsp = IncludeLaunchDescription(
@@ -23,7 +24,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             [os.path.join(get_package_share_directory("gazebo_ros"), "launch", "gazebo.launch.py")]
         ),
-        launch_arguments={'world': os.path.join(get_package_share_directory("urdf_tuto"), 'world', 'office_cpr.world')}.items(),
+        launch_arguments={'world': world}.items(),
     )
 
     # Spawn Entity node
@@ -74,6 +75,11 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
+            DeclareLaunchArgument(
+                "world",
+                default_value=os.path.join(get_package_share_directory("urdf_tuto"), 'world', 'office_cpr.world'),
+                description="Path to the Gazebo world file"
+            ),
             DeclareLaunchArgument(
                 "target_frame",
                 default_value="odom",
