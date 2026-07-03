@@ -33,6 +33,8 @@ setup(
             'yolo_detector = yolo.yolo_detector:main',
             'fire_detector = fire_detect.fire_detector_01:main',
             'drone_detector = drone_detector.drone_detector_01:main',
+            'lidar_camera_fusion = urdf_tuto.lidar_camera_fusion:main',
+            'pointcloud_accumulator = urdf_tuto.pointcloud_accumulator:main',
         ],
     },
 )
