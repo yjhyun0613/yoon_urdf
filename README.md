@@ -32,5 +32,6 @@ source install/setup.bash
 | **🔥 불 감지 시뮬레이션** | `fire_detect.launch.py` | [화재 감지 알고리즘 및 YOLO 모델 설명](./src/urdf_tuto/fire_detect/README.md) |
 | **🛸 드론 감지 시뮬레이션** | `drone_detect.launch.py` | [드론 감지 알고리즘 및 노드 설정 가이드](./src/urdf_tuto/drone_detector/README.md) |
 | **🛰️ 3D 컬러 매핑 시뮬레이션** | `launch_sim_3d.launch.py` | [3D 라이다-카메라 센서 융합 및 매핑 가이드](./src/urdf_tuto/pointcloud_process/README.md) |
+| **🏙️ 강남 3D 컬러 매핑 시뮬레이션** | `launch_sim_gangnam.launch.py` | [3D 라이다-카메라 센서 융합 및 매핑 가이드](./src/urdf_tuto/pointcloud_process/README.md) |
 
 

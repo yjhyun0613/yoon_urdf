@@ -11,3 +11,9 @@ __pycache__/
 debug_images/
 saved_maps/
 *.ply
+*.dae
+*.obj
+*.fbx
+*.glb
+*.mtl
+*.png

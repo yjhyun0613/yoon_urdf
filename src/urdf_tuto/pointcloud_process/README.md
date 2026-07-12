@@ -11,10 +11,16 @@
   * 누적된 지도는 15초 주기 및 시뮬레이션 종료 시점에 `/home/yoon/yoon_urdf/saved_maps/` 폴더에 `.ply` 파일로 자동 저장됩니다.
 
 ## 🚀 실행 방법
-아래 명령어를 사용하여 가제보 3D 융합 매핑 시뮬레이션을 실행합니다:
-```bash
-ros2 launch urdf_tuto launch_sim_3d.launch.py
-```
+가제보 상에서 실행하려는 3D 환경 맵에 따라 아래 명령어 중 하나를 선택해 시뮬레이션을 기동합니다:
+
+* **오피스 환경 (cpr_office) 매핑**:
+  ```bash
+  ros2 launch urdf_tuto launch_sim_3d.launch.py
+  ```
+* **모빌테크 실외 강남 환경 (gangnam_world) 매핑**:
+  ```bash
+  ros2 launch urdf_tuto launch_sim_gangnam.launch.py
+  ```
 
 ## 🛠️ 주요 파라미터 조정
 * **보셀 해상도 (`voxel_size`)**: 맵이 누적되는 점 간격의 세밀함을 정의합니다. 현재 5mm(`0.005m`)로 설정되어 있어 고해상도 매핑이 가능합니다. (`launch_sim_3d.launch.py`에서 변경 가능)
