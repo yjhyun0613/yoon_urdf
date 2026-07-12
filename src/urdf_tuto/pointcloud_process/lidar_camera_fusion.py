@@ -42,7 +42,7 @@ class LidarCameraFusion(Node):
         # Camera Info Subscriber (to dynamically get intrinsics once)
         self.info_sub = self.create_subscription(
             CameraInfo,
-            '/my_robot/camera_info',
+            '/my_robot/camera/camera_info',
             self.camera_info_callback,
             10
         )
@@ -68,13 +68,13 @@ class LidarCameraFusion(Node):
             
             # Setup synchronizers now that we have camera parameters
             self.setup_synchronizers()
-
+ 
     def setup_synchronizers(self):
         if self.sync_initialized:
             return
             
         # Synchronized subscribers
-        self.image_sub = message_filters.Subscriber(self, Image, '/my_robot/image_raw')
+        self.image_sub = message_filters.Subscriber(self, Image, '/my_robot/camera/image_raw')
         self.lidar_sub = message_filters.Subscriber(self, PointCloud2, '/points')
         
         self.ts = message_filters.ApproximateTimeSynchronizer(
@@ -201,15 +201,15 @@ class LidarCameraFusion(Node):
             t_cam = self.tf_buffer.lookup_transform(
                 'camera_link_optical',
                 pc_msg.header.frame_id,
-                pc_msg.header.stamp,
-                timeout=rclpy.duration.Duration(seconds=0.02)
+                rclpy.time.Time(),
+                timeout=rclpy.duration.Duration(seconds=0.1)
             )
             # Transform from Lidar to target_frame (e.g. odom or map)
             t_target = self.tf_buffer.lookup_transform(
                 self.target_frame,
                 pc_msg.header.frame_id,
-                pc_msg.header.stamp,
-                timeout=rclpy.duration.Duration(seconds=0.02)
+                rclpy.time.Time(),
+                timeout=rclpy.duration.Duration(seconds=0.1)
             )
         except Exception as e:
             self.get_logger().warn(f"TF lookup failed: {e}", throttle_duration_sec=3.0)

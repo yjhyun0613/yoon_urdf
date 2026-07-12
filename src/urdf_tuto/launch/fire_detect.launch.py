@@ -11,6 +11,14 @@ def generate_launch_description():
     package_name = "urdf_tuto"
     show_yolo_view = LaunchConfiguration("show_yolo_view")
 
+    # Set GAZEBO_MODEL_PATH so Gazebo can find model://cpr_office
+    models_path = os.path.join(get_package_share_directory(package_name), 'models')
+    gazebo_model_path = os.environ.get('GAZEBO_MODEL_PATH', '')
+    if gazebo_model_path:
+        os.environ['GAZEBO_MODEL_PATH'] = models_path + ':' + gazebo_model_path
+    else:
+        os.environ['GAZEBO_MODEL_PATH'] = models_path
+
     rsp = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             [os.path.join(get_package_share_directory(package_name), "launch", "robot_3.launch.py")]

@@ -10,6 +10,14 @@ def generate_launch_description():
     package_name = "urdf_tuto"
     target_frame = LaunchConfiguration("target_frame")
 
+    # Set GAZEBO_MODEL_PATH so Gazebo can find model://cpr_office
+    models_path = os.path.join(get_package_share_directory(package_name), 'models')
+    gazebo_model_path = os.environ.get('GAZEBO_MODEL_PATH', '')
+    if gazebo_model_path:
+        os.environ['GAZEBO_MODEL_PATH'] = models_path + ':' + gazebo_model_path
+    else:
+        os.environ['GAZEBO_MODEL_PATH'] = models_path
+
     # Robot State Publisher for 3D Robot Model
     rsp = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -68,7 +76,7 @@ def generate_launch_description():
             'save_dir': '/home/yoon/yoon_urdf/saved_maps',
             'save_interval_sec': 15.0,
             'file_format': 'ply',
-            'voxel_size': 0.02
+            'voxel_size': 0.005
         }]
     )
 
