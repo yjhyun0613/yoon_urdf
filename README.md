@@ -40,3 +40,15 @@ ros2 launch urdf_tuto launch_sim_3d.launch.py
 python3 -c "import open3d as o3d; pcd = o3d.io.read_point_cloud('saved_maps/<저장된_파일_이름>.ply'); o3d.visualization.draw_geometries([pcd])"
 ```
 *(또는 `MeshLab`이나 `CloudCompare` 같은 GUI 전문 시뮬레이션 툴을 설치하여 열어볼 수 있습니다.)*
+
+---
+
+## 📂 상세 기능 가이드 (하위 문서 링크)
+
+이 프로젝트의 상세 구성 및 각 노드별 설명은 하위 폴더의 README 링크를 통해 자세히 보실 수 있습니다:
+
+* [🔥 화재 감지 알고리즘 및 YOLO 모델 설명](./src/urdf_tuto/fire_detect/README.md)
+* [🛸 드론 감지 알고리즘 및 노드 설정 가이드](./src/urdf_tuto/drone_detector/README.md)
+* [🛰️ 3D 라이다-카메라 센서 융합 및 매핑 프로세스 설명](./src/urdf_tuto/pointcloud_process/README.md)
+* [📊 3D 라이다 센서 하드웨어 스펙 비교](./src/urdf_tuto/resource/3d_lidar_specs/README.md)
+
